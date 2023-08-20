@@ -12,7 +12,7 @@ class AccessController {
   login = asyncHandler(async (req, res, next) => {
     new OK({
       message: "Login successfully",
-      // metadata: await AccessService.login(req.body),
+      metadata: await AccessService.login(req.body),
     }).send(res);
   });
   logout = asyncHandler(async (req, res, next) => {
