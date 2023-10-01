@@ -8,6 +8,7 @@ exports.findByEmail = async (
     fullName: 1,
     password: 1,
     _id: 1,
+    active: 1,
   }
 ) => {
   return await userModel.findOne({ email }).select(select).lean();
@@ -38,5 +39,7 @@ exports.isAdmin = async (
   }
 ) => {
   const user = await userModel.findById(id).select(select).lean();
-  return user.role.includes(ROLE_USER.ADMIN);
+  return (
+    user.role.includes(ROLE_USER.ADMIN) || user.role.includes(ROLE_USER.ROOT)
+  );
 };

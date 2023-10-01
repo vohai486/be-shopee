@@ -82,6 +82,24 @@ class UserController {
       metadata: await UserService.checkAdmin(req.isAdmin, req.user.userId),
     }).send(res);
   });
+  getAllUser = asyncHandler(async (req, res) => {
+    new OK({
+      message: "OK",
+      metadata: await UserService.getAllUser(req.query),
+    }).send(res);
+  });
+  activeUser = asyncHandler(async (req, res) => {
+    new OK({
+      message: "OK",
+      metadata: await UserService.activeUser(req.params.id),
+    }).send(res);
+  });
+  inactiveUser = asyncHandler(async (req, res) => {
+    new OK({
+      message: "OK",
+      metadata: await UserService.inactiveUser(req.params.id),
+    }).send(res);
+  });
 }
 
 module.exports = new UserController();

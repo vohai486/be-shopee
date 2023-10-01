@@ -30,15 +30,15 @@ class CheckController {
       ),
     }).send(res);
   });
-  getOneOrderByUser = asyncHandler(async (req, res) => {
-    new OK({
-      message: "successfully",
-      metadata: await CheckoutService.getOneOrderByUser(
-        req.user.userId,
-        req.params.id
-      ),
-    }).send(res);
-  });
+  // getOneOrderByUser = asyncHandler(async (req, res) => {
+  //   new OK({
+  //     message: "successfully",
+  //     metadata: await CheckoutService.getOneOrderByUser(
+  //       req.user.userId,
+  //       req.params.id
+  //     ),
+  //   }).send(res);
+  // });
   cancelOrderByUser = asyncHandler(async (req, res) => {
     new OK({
       message: "successfully",
@@ -63,6 +63,15 @@ class CheckController {
       metadata: await CheckoutService.getOrdersByShop(
         req.user.userId,
         req.query
+      ),
+    }).send(res);
+  });
+  getOneOrder = asyncHandler(async (req, res) => {
+    new OK({
+      message: "successfully",
+      metadata: await CheckoutService.getOneOrder(
+        req.user.userId,
+        req.params.id
       ),
     }).send(res);
   });

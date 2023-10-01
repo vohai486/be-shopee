@@ -22,13 +22,25 @@ class ShopController {
   getAllShop = asyncHandler(async (req, res) => {
     new OK({
       message: "OK",
-      metadata: await ShopService.getAllShop(),
+      metadata: await ShopService.getAllShop(req.query),
     }).send(res);
   });
   registerSeller = asyncHandler(async (req, res) => {
     new CREATED({
       message: "CREATED",
       metadata: await ShopService.registerSeller(req.user, req.body),
+    }).send(res);
+  });
+  activeShop = asyncHandler(async (req, res) => {
+    new OK({
+      message: "CREATED",
+      metadata: await ShopService.activeShop(req.body),
+    }).send(res);
+  });
+  inActiveShop = asyncHandler(async (req, res) => {
+    new OK({
+      message: "CREATED",
+      metadata: await ShopService.inActiveShop(req.body),
     }).send(res);
   });
 }

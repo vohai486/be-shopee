@@ -26,6 +26,6 @@ router.post("/", checkoutController.orderByOrder);
 router.post("/create_payment_url", checkoutController.createOrderPaymentVnpay);
 router.get("/vnpay_return", checkoutController.vnPayReturn);
 
-router.get("/:id", checkoutController.getOneOrderByUser);
+router.get("/:id", checkoutController.getOneOrder);
 
 module.exports = router;

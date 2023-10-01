@@ -7,7 +7,7 @@ const app = express();
 const cors = require("cors");
 
 // init middlewares
-app.use(morgan("dev"));
+// app.use(morgan("dev"));
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -21,6 +21,7 @@ require("./dbs/init.mongodb");
 app.use("/v1/api", require("./routes"));
 
 const http = require("http").createServer(app);
+
 const io = require("socket.io")(http, {
   cors: {
     origin: "*",
@@ -30,7 +31,7 @@ const io = require("socket.io")(http, {
 
 global._io = io;
 
-global._io.on("connection", SocketService.connection);
+SocketService.connection(global._io);
 
 // handlling error
 app.use((req, res, next) => {

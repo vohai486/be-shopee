@@ -17,11 +17,18 @@ const { convertToVietnamTime } = require("../utils");
 
 class StatisticService {
   static async getTodoList(shopId) {
+    const today = new Date();
+    const startOfDay = new Date(today.setHours(0, 0, 0, 0));
+    const endOfDay = new Date(today.setHours(23, 59, 59, 999));
     const [orders, inventories] = await Promise.all([
       orderModel.aggregate([
         {
           $match: {
             order_shop: new Types.ObjectId(shopId),
+            createdAt: {
+              $gte: startOfDay,
+              $lte: endOfDay,
+            },
           },
         },
         {

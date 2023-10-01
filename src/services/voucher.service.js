@@ -85,7 +85,10 @@ class VoucherService {
       })
       .lean();
   }
-  static async getVoucherForShop(userId, { status, page = 1, limit = 10 }) {
+  static async getVoucherForShop(
+    userId,
+    { status, page = 1, limit = 10, sortBy }
+  ) {
     const query = { voucher_shopId: userId, voucher_is_active: true };
     if (status === "happenning") {
       query.voucher_start_date = { $lte: new Date() };
@@ -97,25 +100,44 @@ class VoucherService {
     if (status === "finished") {
       query.voucher_end_date = { $lt: new Date() };
     }
+    let sort = {
+      createdAt: -1,
+    };
+    if (sortBy === "oldest") {
+      sort = {
+        createdAt: -1,
+      };
+    }
+    if (sortBy === "name-asc") {
+      sort = {
+        voucher_name: 1,
+      };
+    }
+    if (sortBy === "name-desc") {
+      sort = {
+        voucher_name: -1,
+      };
+    }
     const skip = (+page - 1) * limit;
     const [voucherFiter, vouchers] = await Promise.all([
       voucherModel
         .find(query)
         .skip(skip)
         .limit(limit)
-        .sort({
-          createdAt: -1,
-        })
         .select({
+          voucher_max_uses_per_user: 1,
+          voucher_code: 1,
           voucher_name: 1,
+          voucher_min_order_value: 1,
           _id: 1,
           voucher_max_uses: 1,
           voucher_start_date: 1,
           voucher_value: 1,
           voucher_end_date: 1,
-          voucher_value: 1,
           voucher_user_used: 1,
+          createdAt: 1,
         })
+        .sort(sort)
         .lean(),
       voucherModel
         .find(query)
@@ -125,23 +147,18 @@ class VoucherService {
         .lean(),
     ]);
     const result = voucherFiter.map((item) => {
-      const newItem = omitObjectKey(item, [
-        "voucher_start_date",
-        "voucher_end_date",
-        "voucher_user_used",
-      ]);
-      newItem.status =
+      item.status =
         new Date() < new Date(item.voucher_start_date)
           ? "upcoming"
           : new Date() > new Date(item.voucher_end_date)
           ? "finished"
           : "happenning";
-      newItem.numUsed = item.voucher_user_used.length;
-      newItem.codeRetentionTime = Math.floor(
+      item.numUsed = item.voucher_user_used.length;
+      item.codeRetentionTime = Math.floor(
         (new Date(item.voucher_end_date) - new Date(item.voucher_start_date)) /
           (1000 * 60 * 60 * 24)
       );
-      return newItem;
+      return item;
     });
     const total_pages = Math.ceil(vouchers.length / limit);
     return {

@@ -12,6 +12,8 @@ const router = express.Router();
 // authentication //
 router.get("", reviewController.getReviewsByUser);
 router.use(authentication);
+router.get("/shop", reviewController.getReviewsByShop);
+
 router
   .route("")
   .post(

@@ -5,8 +5,8 @@ const shopController = require("../../controllers/shop.controller");
 const router = express.Router();
 
 router.use(optional);
-
 router.get("", shopController.getAllShop);
+
 router.get("/:id", shopController.getDetailShop);
 
 // authentication //
@@ -16,5 +16,8 @@ router.post("/check-shop", shopController.checkShop);
 router.post("/register-seller", shopController.registerSeller);
 
 router.use(isAdmin);
+
+router.post("/active", shopController.activeShop);
+router.post("/in-active", shopController.inActiveShop);
 
 module.exports = router;

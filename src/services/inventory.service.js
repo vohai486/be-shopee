@@ -1,17 +1,8 @@
 const { Types } = require("mongoose");
-const {
-  BadRequestError,
-  AuthFailureError,
-  ForbiddenError,
-  NotFoundRequestError,
-} = require("../core/error.response");
 const inventoryModel = require("../models/inventory.model");
 const orderModel = require("../models/order.model");
-const importModel = require("../models/import.model");
-
 const { STATUS_ORDER } = require("../constants/status");
 const { insertImport } = require("../models/repositories/import.repo");
-const productModel = require("../models/product.model");
 const { updateProduct } = require("../models/repositories/product.repo");
 
 class InventoryService {
@@ -141,7 +132,6 @@ class InventoryService {
     };
   }
   static async importProduct(shopId, { productId, quantity, price }) {
-    console.log(productId, quantity, price);
     await Promise.all([
       insertImport({
         import_productId: productId,

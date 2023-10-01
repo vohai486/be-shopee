@@ -229,7 +229,7 @@ class CheckoutService {
         "order_checkout order_isDelivered order_products order_shop order_status _id updatedAt createdAt"
       )
       .sort({
-        updatedAt: -1,
+        createdAt: -1,
       })
       .lean();
   }
@@ -237,21 +237,21 @@ class CheckoutService {
   /**
    * 2. Query using Id [User]
    */
-  static async getOneOrderByUser(userId, orderId) {
-    const order = await orderModel
-      .findOne({
-        _id: orderId,
-        order_user: userId,
-      })
-      .populate("order_shop", "shop_name _id shop_avatar")
-      .populate("order_products.product", "product_name product_thumb _id")
-      .select(
-        "order_checkout order_isDelivered order_isPaid order_products order_shop order_status _id updatedAt createdAt order_payment order_shipping"
-      )
-      .lean();
-    if (!order) throw new NotFoundRequestError("Không tìm thấy order");
-    return order;
-  }
+  // static async getOneOrderByUser(userId, orderId) {
+  //   const order = await orderModel
+  //     .findOne({
+  //       _id: orderId,
+  //       order_user: userId,
+  //     })
+  //     .populate("order_shop", "shop_name _id shop_avatar")
+  //     .populate("order_products.product", "product_name product_thumb _id")
+  //     .select(
+  //       "order_checkout order_isDelivered order_isPaid order_products order_shop order_status _id updatedAt createdAt order_payment order_shipping"
+  //     )
+  //     .lean();
+  //   if (!order) throw new NotFoundRequestError("Không tìm thấy order");
+  //   return order;
+  // }
 
   // 3. Cancel order [User]
   static async cancelOrderByUser(userId, orderId) {
@@ -327,7 +327,9 @@ class CheckoutService {
         order_products: 1,
         _id: 1,
         updatedAt: 1,
+        order_shipping: 1,
       },
+      sortBy,
     }
   ) {
     const skip = (+page - 1) * limit;
@@ -335,14 +337,33 @@ class CheckoutService {
     if (status) {
       query.order_status = status;
     }
+    let sort = {
+      createdAt: -1,
+    };
+    if (sortBy === "price-asc") {
+      sort = {
+        "order_checkout.totalCheckout": 1,
+        createdAt: -1,
+      };
+    }
+    if (sortBy === "price-desc") {
+      sort = {
+        "order_checkout.totalCheckout": -1,
+        createdAt: -1,
+      };
+    }
+    if (sortBy === "oldest") {
+      sort = {
+        createdAt: 1,
+      };
+    }
+
     const [orderFilter, orders] = await Promise.all([
       orderModel
         .find(query)
         .populate("order_user", "fullName _id avatar")
         .populate("order_products.product", "product_name product_thumb _id")
-        .sort({
-          createdAt: -1,
-        })
+        .sort(sort)
         .skip(skip)
         .limit(limit)
         .select(select)
@@ -358,6 +379,28 @@ class CheckoutService {
         limit,
       },
     };
+  }
+  static async getOneOrder(shopId, orderId) {
+    const order = await orderModel
+      .findOne({
+        _id: orderId,
+        $or: [
+          {
+            order_shop: new Types.ObjectId(shopId),
+          },
+          {
+            order_user: new Types.ObjectId(shopId),
+          },
+        ],
+      })
+      .populate("order_shop", "shop_name _id shop_avatar")
+      .populate("order_products.product", "product_name product_thumb _id")
+      .select(
+        "order_checkout order_isDelivered order_isPaid order_products order_shop order_status _id updatedAt createdAt order_payment order_shipping"
+      )
+      .lean();
+    if (!order) throw new NotFoundRequestError("Không tìm thấy order");
+    return order;
   }
 
   // Update Order Status [Shop, Admin]

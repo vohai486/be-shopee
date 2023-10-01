@@ -16,7 +16,7 @@ const {
   searchProductByUser,
 } = require("../models/repositories/product.repo");
 const { findOneShop } = require("../models/repositories/shop.repo");
-const { omitObjectKey } = require("../utils");
+const { omitObjectKey, convertToObjectIdMongo } = require("../utils");
 const { uploadProduct } = require("../utils/upload");
 const { findById } = require("../models/repositories/user.repo");
 
@@ -68,6 +68,28 @@ class ProductService {
     }
     return product ? 1 : 0;
   }
+  static async updateProduct(req, shopId) {
+    const foundShop = await findOneShop(shopId);
+    if (!foundShop) throw new NotFoundRequestError("Shop không tồn tại");
+    let url = "";
+    if (req.body.image) {
+      url = await uploadProduct(req);
+    }
+    let { product_importPrice, product_quantity, ...rest } = req.body;
+    if (url) {
+      rest.product_thumb = url;
+    }
+    if (rest.product_specifications) {
+      rest.product_specifications = JSON.parse(rest.product_specifications);
+    }
+    await updateProduct(
+      {
+        _id: convertToObjectIdMongo(req.params.id),
+      },
+      { ...rest }
+    );
+    return 1;
+  }
 
   static async verifyProduct({ productIds }) {
     let newProductIds = productIds.map((s) => new Types.ObjectId(s));
@@ -77,6 +99,18 @@ class ProductService {
       },
       {
         verify: true,
+      }
+    );
+    return newProducts?.modifiedCount === productIds.length ? 1 : 0;
+  }
+  static async unVerifyProduct({ productIds }) {
+    let newProductIds = productIds.map((s) => new Types.ObjectId(s));
+    const newProducts = await productModel.updateMany(
+      {
+        _id: { $in: newProductIds },
+      },
+      {
+        verify: false,
       }
     );
     return newProducts?.modifiedCount === productIds.length ? 1 : 0;
@@ -213,8 +247,14 @@ class ProductService {
   static async getListSearchProduct(keySearch) {
     return await searchProductByUser(keySearch);
   }
-  static async getAllProductForShop(shopId, { type, page = 1, limit = 10 }) {
+  static async getAllProductForShop(
+    shopId,
+    { type, sortBy, page = 1, limit = 10 }
+  ) {
     const query = { product_shop: shopId };
+    let sort = {
+      createdAt: -1,
+    };
     if (type === "published") {
       query.isPublished = true;
       query.verify = true;
@@ -229,6 +269,33 @@ class ProductService {
       query.isDraft = true;
       query.verify = true;
     }
+    if (sortBy === "price-asc") {
+      sort = {
+        product_price: 1,
+        createdAt: -1,
+      };
+    }
+    if (sortBy === "price-desc") {
+      sort = {
+        product_price: -1,
+        createdAt: -1,
+      };
+    }
+    if (sortBy === "oldest") {
+      sort = {
+        createdAt: 1,
+      };
+    }
+    if (sortBy === "name-asc") {
+      sort = {
+        product_name: 1,
+      };
+    }
+    if (sortBy === "name-desc") {
+      sort = {
+        product_name: -1,
+      };
+    }
     const skip = (+page - 1) * limit;
 
     const [productFilter, products] = await Promise.all([
@@ -237,6 +304,7 @@ class ProductService {
         .populate("product_category", "category_name _id")
         .skip(skip)
         .limit(limit)
+        .sort(sort)
         .lean(),
       productModel.find(query).lean(),
     ]);
@@ -250,13 +318,21 @@ class ProductService {
       },
     };
   }
-  static async getAllProductForAdmin({ status, page = 1, limit = 10 }) {
+  static async getAllProductForAdmin({ status, sortBy, page = 1, limit = 10 }) {
     const query = {};
+    let sort = {
+      createdAt: -1,
+    };
     if (status === "wait-verify") {
       query.verify = false;
     }
     if (status === "verify") {
       query.verify = true;
+    }
+    if (sortBy === "oldest") {
+      sort = {
+        createdAt: 1,
+      };
     }
 
     const skip = (+page - 1) * limit;
@@ -269,9 +345,11 @@ class ProductService {
           product_name: 1,
           createdAt: 1,
           _id: 1,
+          verify: 1,
         })
         .skip(skip)
         .limit(limit)
+        .sort(sort)
         .lean(),
       productModel.find(query).lean(),
     ]);

@@ -55,4 +55,9 @@ productSchema.pre("save", function (next) {
   next();
 });
 
+productSchema.post(/^findOneAnd/, function (doc) {
+  doc.product_price =
+    (doc.product_originalPrice * (100 - doc.product_discount)) / 100;
+  doc.save();
+});
 module.exports = model(DOCUMENT_NAME, productSchema);

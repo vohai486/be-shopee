@@ -25,5 +25,8 @@ router
 
 router.use(isAdmin);
 router.post("/check-admin", userController.checkAdmin);
+router.get("/", userController.getAllUser);
+router.post("/active/:id", userController.activeUser);
+router.post("/in-active/:id", userController.inactiveUser);
 
 module.exports = router;

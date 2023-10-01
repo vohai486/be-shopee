@@ -15,6 +15,12 @@ class ReviewController {
       metadata: await ReviewService.getReviewsByUser(req.query),
     }).send(res);
   });
+  getReviewsByShop = asyncHandler(async (req, res, next) => {
+    new OK({
+      message: "OK",
+      metadata: await ReviewService.getReviewsByShop(req.user.userId),
+    }).send(res);
+  });
 }
 
 module.exports = new ReviewController();

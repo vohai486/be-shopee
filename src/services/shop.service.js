@@ -17,6 +17,7 @@ const { STATUS } = require("../constants/status");
 const { updateShop, findOneShop } = require("../models/repositories/shop.repo");
 const productModel = require("../models/product.model");
 const ProductService = require("./product.service");
+const { Types } = require("mongoose");
 
 class ShopService {
   static async registerSeller(user, { name, address = {} }) {
@@ -92,18 +93,75 @@ class ShopService {
       categories,
     };
   }
-  static async getAllShop() {
-    return await shopModel
-      .find({
-        shop_verfify: true,
+  static async getAllShop({ status = "", sortBy = "", page = 1, limit = 10 }) {
+    const query = {};
+    let sort = {
+      createdAt: -1,
+    };
+    if (status === STATUS.ACTIVE) {
+      query.shop_status = STATUS.ACTIVE;
+    }
+    if (status === STATUS.INACTIVE) {
+      query.shop_status = STATUS.INACTIVE;
+    }
+    if (sortBy === "oldest") {
+      sort = {
+        createdAt: 1,
+      };
+    }
+    const skip = (+page - 1) * limit;
+
+    const [shopFilter, shops] = await Promise.all([
+      shopModel
+        .find(query)
+        .select({
+          shop_name: 1,
+          shop_status: 1,
+          shop_avatar: 1,
+          createdAt: 1,
+          _id: 1,
+        })
+        .skip(skip)
+        .limit(limit)
+        .sort(sort)
+        .lean(),
+      shopModel.find(query).lean(),
+    ]);
+    const total_pages = Math.ceil(shops.length / limit);
+    return {
+      shops: shopFilter,
+      pagination: {
+        total_pages,
+        page,
+        limit,
+      },
+    };
+  }
+  static async activeShop({ listId = [] }) {
+    let newIds = listId.map((s) => new Types.ObjectId(s));
+    await shopModel.updateMany(
+      {
+        shop_status: STATUS.INACTIVE,
+        _id: { $in: newIds },
+      },
+      {
         shop_status: STATUS.ACTIVE,
-      })
-      .select({
-        _id: 1,
-        shop_name: 1,
-      })
-      .limit(10)
-      .lean();
+      }
+    );
+    return 1;
+  }
+  static async inActiveShop({ listId = [] }) {
+    let newIds = listId.map((s) => new Types.ObjectId(s));
+    await shopModel.updateMany(
+      {
+        shop_status: STATUS.ACTIVE,
+        _id: { $in: newIds },
+      },
+      {
+        shop_status: STATUS.INACTIVE,
+      }
+    );
+    return 1;
   }
 }
 

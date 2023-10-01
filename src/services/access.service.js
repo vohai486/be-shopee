@@ -56,7 +56,8 @@ class AccessService {
     // check email in dbs
     const foundUser = await findByEmail(email);
     if (!foundUser) throw new NotFoundRequestError("Người dùng không tồn tại");
-
+    if (!foundUser.active)
+      throw new NotFoundRequestError("Tài khoản đã bị cấm");
     // match password
     const matchPassword = await bcrypt.compare(password, foundUser.password);
     if (!matchPassword) throw new AuthFailureError("Mật khẩu không chính xác");

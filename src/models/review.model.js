@@ -18,6 +18,10 @@ const reviewSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    review_parent: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Review",
+    },
     review_images: { type: Array, default: [] },
     review_product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
   },
@@ -53,7 +57,9 @@ reviewSchema.statics.calcAverageRatings = async function (productId) {
 };
 // chạy sau khi các middleware đã hoàn thành
 reviewSchema.post("save", async function () {
-  this.constructor.calcAverageRatings(this.review_product);
+  if (!this.review_parent) {
+    this.constructor.calcAverageRatings(this.review_product);
+  }
 });
 
 // khi update or delete

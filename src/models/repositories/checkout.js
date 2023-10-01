@@ -1,5 +1,6 @@
 const { BadRequestError } = require("../../core/error.response");
 const CartService = require("../../services/cart.service");
+const { acquireLock, releaseLock } = require("../../services/redis.service");
 const { convertToObjectIdMongo } = require("../../utils");
 const orderModel = require("../order.model");
 const productModel = require("../product.model");
@@ -22,15 +23,24 @@ exports.createOrders = async (
     productId: product.productId,
     quantity: product.quantity,
   }));
-  const acquireProduct = await Promise.all(
-    productIdAndQuantity.map(({ productId, quantity }) =>
-      reservationInventory({
-        inven_productId: productId,
-        quantity,
-        cartId,
-      })
-    )
-  );
+  const acquireProduct = [];
+  for (let i = 0; i < productIdAndQuantity.length; i++) {
+    const { productId, quantity } = productIdAndQuantity[i];
+    const keyLock = await acquireLock(productId, quantity, cartId);
+    acquireProduct.push(keyLock ? true : false);
+    if (keyLock) {
+      await releaseLock(keyLock);
+    }
+  }
+  // const acquireProduct = await Promise.all(
+  //   productIdAndQuantity.map(({ productId, quantity }) =>
+  //     reservationInventory({
+  //       inven_productId: productId,
+  //       quantity,
+  //       cartId,
+  //     })
+  //   )
+  // );
   if (acquireProduct.filter((x) => x).length === 0)
     throw new BadRequestError(
       "Một số sản phẩm đã được cập nhập, vui lòng quay lại giỏ hàng"

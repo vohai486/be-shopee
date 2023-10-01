@@ -1,4 +1,4 @@
-const { USER } = require("../constants/role.user");
+const { USER, ROLE_USER } = require("../constants/role.user");
 const {
   BadRequestError,
   AuthFailureError,
@@ -225,6 +225,73 @@ class UserService {
     return {
       id,
     };
+  }
+  static async getAllUser({ status = "", sortBy = "", page = 1, limit = 10 }) {
+    const query = {};
+    let sort = {
+      createdAt: -1,
+    };
+    if (status === "inactive") {
+      query.active = false;
+    }
+    if (status === "active") {
+      query.active = true;
+    }
+    if (sortBy === "oldest") {
+      sort = {
+        createdAt: 1,
+      };
+    }
+    const skip = (+page - 1) * limit;
+
+    const [userFilter, users] = await Promise.all([
+      userModel
+        .find(query)
+        .select({
+          email: 1,
+          role: 1,
+          active: 1,
+          createdAt: 1,
+          _id: 1,
+          fullName: 1,
+        })
+        .skip(skip)
+        .limit(limit)
+        .sort(sort)
+        .lean(),
+      userModel.find(query).lean(),
+    ]);
+    const total_pages = Math.ceil(users.length / limit);
+    return {
+      users: userFilter.map((item) => {
+        const cloneItem = { ...item };
+        if (item.role.includes(ROLE_USER.ROOT)) {
+          cloneItem.role = "Root";
+        } else if (item.role.includes(ROLE_USER.ADMIN)) {
+          cloneItem.role = "Admin";
+        } else {
+          cloneItem.role = "User";
+        }
+        return cloneItem;
+      }),
+      pagination: {
+        total_pages,
+        page,
+        limit,
+      },
+    };
+  }
+  static async activeUser(id) {
+    await findByIdAndUpdate(id, {
+      active: true,
+    });
+    return 1;
+  }
+  static async inactiveUser(id) {
+    await findByIdAndUpdate(id, {
+      active: false,
+    });
+    return 1;
   }
 }
 

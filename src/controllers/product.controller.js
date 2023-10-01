@@ -9,10 +9,22 @@ class ProductController {
       metadata: await ProductService.createProduct(req, req.user.userId),
     }).send(res);
   });
+  updateProduct = asyncHandler(async (req, res) => {
+    new OK({
+      message: "Update product successfully",
+      metadata: await ProductService.updateProduct(req, req.user.userId),
+    }).send(res);
+  });
   verifyProduct = asyncHandler(async (req, res) => {
     new OK({
       message: "Verify successfully",
       metadata: await ProductService.verifyProduct(req.body),
+    }).send(res);
+  });
+  unVerifyProduct = asyncHandler(async (req, res) => {
+    new OK({
+      message: "Un Verify successfully",
+      metadata: await ProductService.unVerifyProduct(req.body),
     }).send(res);
   });
   publishProductByShop = asyncHandler(async (req, res) => {
